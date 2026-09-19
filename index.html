@@ -346,35 +346,46 @@ body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
     }
   };
 
-  window.submitEntry = function() {
-    var amtInput = document.getElementById("fieldAmount");
-    if(!amtInput) return;
-    var amt = parseFloat(amtInput.value);
+window.submitEntry = function() {
+  var amtInput = document.getElementById("fieldAmount");
+  if(!amtInput) return;
+  var amt = parseFloat(amtInput.value);
 
-    if(!amtInput.value || isNaN(amt) || amt <= 0){
-      amtInput.focus();
-      return;
-    }
+  if(!amtInput.value || isNaN(amt) || amt <= 0){
+    amtInput.focus();
+    return;
+  }
 
-    var cat = document.getElementById("fieldCategory").value || "Other";
-    var desc = document.getElementById("fieldDesc").value.trim() || cat;
-    var timeVal = document.getElementById("fieldTime").value || getNowDateTime();
-    var mode = document.getElementById("fieldMode").value;
+  var cat = document.getElementById("fieldCategory").value || "Other";
+  var desc = document.getElementById("fieldDesc").value.trim() || cat;
+  var timeVal = document.getElementById("fieldTime").value || getNowDateTime();
+  var mode = document.getElementById("fieldMode").value;
 
-    var newRecord = {
-      type: activeType,
-      category: cat,
-      title: desc,
-      amount: amt,
-      mode: mode,
-      date: timeVal,
-      createdAt: Date.now()
-    };
+  var newRecord = {
+    type: activeType,
+    category: cat,
+    title: desc,
+    amount: amt,
+    mode: mode,
+    date: timeVal,
+    createdAt: Date.now()
+  };
 
-    if(db) {
-      db.collection("expenses").add(newRecord).catch(function(err){
-        console.error("Error adding transaction:", err);
-      });
+  if (db) {
+    db.collection("expenses").add(newRecord).catch(function(err){
+      console.error("Error adding transaction:", err);
+    });
+  }
+
+  if(timeVal.length >= 7){
+    currentYear = parseInt(timeVal.substring(0,4),10);
+    currentMonth = parseInt(timeVal.substring(5,7),10)-1;
+  }
+
+  setCategoryFilter("ALL");
+  showScreen("home");
+};
+
     }
 
     if(timeVal.length >= 7){
