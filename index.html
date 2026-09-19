@@ -4,12 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kharcha Paani</title>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #f8fafc; color: #0f172a; padding-bottom: 80px; }
 
     .app-header { background: #0f172a; color: #ffffff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
     .app-header h1 { font-size: 1.15rem; font-weight: 700; }
+
+    .sync-badge { font-size: 0.68rem; padding: 3px 8px; border-radius: 12px; background: #16a34a; color: #fff; font-weight: 600; margin-left: 6px; }
 
     .month-nav { display: flex; align-items: center; gap: 6px; background: #1e293b; padding: 4px 10px; border-radius: 20px; }
     .nav-btn { background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer; padding: 2px 6px; }
@@ -85,7 +92,10 @@
 <body>
 
   <header class="app-header">
-    <h1>💰 Kharcha Paani</h1>
+    <div style="display: flex; align-items: center;">
+      <h1>💰 Kharcha Paani</h1>
+      <span class="sync-badge" id="syncStatus">Cloud On</span>
+    </div>
     <div class="month-nav">
       <button type="button" class="nav-btn" onclick="shiftMonth(-1)">‹</button>
       <span class="month-label" id="monthBadge">Month</span>
@@ -183,7 +193,7 @@
           </select>
         </div>
 
-        <button type="button" class="btn-submit" onclick="submitEntry()">Save Transaction</button>
+        <button type="button" class="btn-submit" id="btnSubmitForm" onclick="submitEntry()">Save Transaction</button>
       </div>
     </div>
 
@@ -273,6 +283,25 @@
   </nav>
 
   <script>
+    // Firebase Setup
+    const firebaseConfig = {
+      apiKey: "AIzaSyAz1fcZrwwQVB8KDAeNSJ249dCwMN8Fvg",
+      authDomain: "kharcha-pani-ee1d0.firebaseapp.com",
+      projectId: "kharcha-pani-ee1d0",
+      storageBucket: "kharcha-pani-ee1d0.firebasestorage.app",
+      messagingSenderId: "4665152767652",
+      appId: "1:4665152767652:web:3ed8ff4d711d9978604821",
+      measurementId: "G-DY8HQH2TQE"
+    };
+
+    var db = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch(err) {
+      console.warn('Firebase init offline mode:', err);
+    }
+
     var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var categories = {
       expense: [
@@ -314,13 +343,26 @@
     var currentMonth = now.getMonth();
     var activeType = 'expense';
     var activeCatFilter = 'ALL';
+    var records = [];
 
-    var mStr = padZero(currentMonth + 1);
-    var records = [
-      { id: 101, type: 'expense', category: 'Grocery', title: 'Groceries Store', amount: 850, mode: 'Online', date: currentYear + '-' + mStr + '-18T16:30' },
-      { id: 102, type: 'income', category: 'Salary', title: 'Monthly Salary', amount: 35000, mode: 'Online', date: currentYear + '-' + mStr + '-18T11:00' },
-      { id: 103, type: 'expense', category: 'Fuel', title: 'Petrol', amount: 350, mode: 'Cash', date: currentYear + '-' + mStr + '-17T18:15' }
-    ];
+    // Realtime Database Listener
+    if (db) {
+      db.collection('expenses').onSnapshot(function(snapshot) {
+        records = [];
+        snapshot.forEach(function(doc) {
+          var item = doc.data();
+          item.id = doc.id;
+          records.push(item);
+        });
+        document.getElementById('syncStatus').innerText = 'Cloud Sync';
+        document.getElementById('syncStatus').style.background = '#16a34a';
+        render();
+      }, function(error) {
+        console.warn('Firestore offline:', error);
+        document.getElementById('syncStatus').innerText = 'Offline Mode';
+        document.getElementById('syncStatus').style.background = '#eab308';
+      });
+    }
 
     window.showScreen = function(viewName) {
       document.getElementById('viewHome').style.display = (viewName === 'home') ? 'block' : 'none';
@@ -383,9 +425,13 @@
       render();
     };
 
-    window.deleteRecord = function(id) {
-      records = records.filter(function(x) { return x.id !== id; });
-      render();
+    window.deleteRecord = function(docId) {
+      if (db) {
+        db.collection('expenses').doc(String(docId)).delete();
+      } else {
+        records = records.filter(function(x) { return x.id !== docId; });
+        render();
+      }
     };
 
     window.submitEntry = function() {
@@ -397,159 +443,4 @@
         return;
       }
 
-      var cat = document.getElementById('fieldCategory').value || 'Other';
-      var desc = document.getElementById('fieldDesc').value.trim() || cat;
-      var timeVal = document.getElementById('fieldTime').value || getNowDateTime();
-      var mode = document.getElementById('fieldMode').value;
-
-      records.unshift({
-        id: Date.now(),
-        type: activeType,
-        category: cat,
-        title: desc,
-        amount: amt,
-        mode: mode,
-        date: timeVal
-      });
-
-      if (timeVal.length >= 7) {
-        currentYear = parseInt(timeVal.substring(0, 4), 10);
-        currentMonth = parseInt(timeVal.substring(5, 7), 10) - 1;
-      }
-
-      setCategoryFilter('ALL');
-      showScreen('home');
-    };
-
-    function render() {
-      var monthStr = monthNames[currentMonth] + ' ' + currentYear;
-      document.getElementById('monthBadge').innerText = monthStr;
-      document.getElementById('repMonthLabel').innerText = monthStr;
-
-      var incomeSum = 0;
-      var expenseSum = 0;
-      var cashIn = 0, cashOut = 0;
-      var onlineIn = 0, onlineOut = 0;
-      var tallyMap = {};
-
-      var targetPrefix = currentYear + '-' + padZero(currentMonth + 1);
-
-      var monthRecords = [];
-      for (var i = 0; i < records.length; i++) {
-        var item = records[i];
-        if (item.date && item.date.indexOf(targetPrefix) === 0) {
-          monthRecords.push(item);
-          var a = Number(item.amount) || 0;
-          var isCash = (item.mode === 'Cash');
-
-          if (item.type === 'expense') {
-            expenseSum += a;
-            if (isCash) cashOut += a; else onlineOut += a;
-
-            var catName = item.category || 'Other';
-            if (!tallyMap[catName]) tallyMap[catName] = { cash: 0, online: 0, total: 0 };
-            if (isCash) tallyMap[catName].cash += a; else tallyMap[catName].online += a;
-            tallyMap[catName].total += a;
-          } else {
-            incomeSum += a;
-            if (isCash) cashIn += a; else onlineIn += a;
-          }
-        }
-      }
-
-      var displayRecords = [];
-      for (var j = 0; j < monthRecords.length; j++) {
-        var tx = monthRecords[j];
-        if (activeCatFilter === 'ALL' || (tx.category || 'Other').toLowerCase() === activeCatFilter.toLowerCase()) {
-          displayRecords.push(tx);
-        }
-      }
-
-      displayRecords.sort(function (a, b) {
-        return (b.date || '').localeCompare(a.date || '');
-      });
-
-      var container = document.getElementById('txList');
-      container.innerHTML = '';
-
-      if (displayRecords.length === 0) {
-        container.innerHTML = '<div class="empty-state">No entries found for ' + monthStr + '.</div>';
-      } else {
-        for (var k = 0; k < displayRecords.length; k++) {
-          var rowItem = displayRecords[k];
-          var isExp = (rowItem.type === 'expense');
-          var amt = Number(rowItem.amount) || 0;
-          var cat = rowItem.category || 'Other';
-          var icon = getCatIcon(cat, rowItem.type);
-
-          var dayPart = rowItem.date.substring(8, 10);
-          var timePart = rowItem.date.length >= 16 ? rowItem.date.substring(11, 16) : '';
-          var dateStr = dayPart + ' ' + monthNames[currentMonth] + (timePart ? ', ' + timePart : '');
-
-          var card = document.createElement('div');
-          card.className = 'tx-card';
-          card.innerHTML =
-            '<div class="tx-info">' +
-              '<div class="tx-icon ' + rowItem.type + '">' + icon + '</div>' +
-              '<div>' +
-                '<div class="tx-title">' + (rowItem.title || cat) + '</div>' +
-                '<div class="tx-date">' + cat + ' • ' + dateStr + ' • ' + rowItem.mode + '</div>' +
-              '</div>' +
-            '</div>' +
-            '<div style="display:flex; align-items:center;">' +
-              '<div class="tx-amount ' + (isExp ? 'val-expense' : 'val-income') + '">' +
-                (isExp ? '-' : '+') + ' ₹ ' + amt.toLocaleString('en-IN') +
-              '</div>' +
-              '<button type="button" class="btn-del" onclick="deleteRecord(' + rowItem.id + ')">🗑️</button>' +
-            '</div>';
-          container.appendChild(card);
-        }
-      }
-
-      var net = incomeSum - expenseSum;
-      document.getElementById('valIncome').innerText = '+ ₹ ' + incomeSum.toLocaleString('en-IN');
-      document.getElementById('valExpense').innerText = '- ₹ ' + expenseSum.toLocaleString('en-IN');
-      document.getElementById('valNet').innerText = '₹ ' + net.toLocaleString('en-IN');
-      document.getElementById('txCountBadge').innerText = displayRecords.length + ' entries';
-
-      document.getElementById('repTotalIncome').innerText = '₹ ' + incomeSum.toLocaleString('en-IN');
-      document.getElementById('repTotalExpense').innerText = '₹ ' + expenseSum.toLocaleString('en-IN');
-      document.getElementById('repTotalCount').innerText = monthRecords.length;
-
-      var rate = incomeSum > 0 ? Math.max(0, Math.round((net / incomeSum) * 100)) : 0;
-      document.getElementById('repSavingsRate').innerText = rate + '%';
-
-      var cashNet = cashIn - cashOut;
-      var onlineNet = onlineIn - onlineOut;
-      document.getElementById('repCashBalance').innerText = '₹ ' + cashNet.toLocaleString('en-IN');
-      document.getElementById('repCashIn').innerText = '+₹' + cashIn.toLocaleString('en-IN');
-      document.getElementById('repCashOut').innerText = '-₹' + cashOut.toLocaleString('en-IN');
-      document.getElementById('repOnlineBalance').innerText = '₹ ' + onlineNet.toLocaleString('en-IN');
-      document.getElementById('repOnlineIn').innerText = '+₹' + onlineIn.toLocaleString('en-IN');
-      document.getElementById('repOnlineOut').innerText = '-₹' + onlineOut.toLocaleString('en-IN');
-
-      var tbody = document.getElementById('tallyBody');
-      tbody.innerHTML = '';
-      var tKeys = Object.keys(tallyMap);
-      if (tKeys.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:10px;">No expenses recorded</td></tr>';
-      } else {
-        for (var t = 0; t < tKeys.length; t++) {
-          var cName = tKeys[t];
-          var r = tallyMap[cName];
-          var tr = document.createElement('tr');
-          tr.innerHTML =
-            '<td><strong>' + getCatIcon(cName, 'expense') + ' ' + cName + '</strong></td>' +
-            '<td class="tar">₹ ' + r.cash.toLocaleString('en-IN') + '</td>' +
-            '<td class="tar">₹ ' + r.online.toLocaleString('en-IN') + '</td>' +
-            '<td class="tar"><strong class="val-expense">₹ ' + r.total.toLocaleString('en-IN') + '</strong></td>';
-          tbody.appendChild(tr);
-        }
-      }
-    }
-
-    updateCategoryDropdown('expense');
-    showScreen('home');
-  </script>
-</body>
-</html>
+      var cat = document.get
