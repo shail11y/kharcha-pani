@@ -94,7 +94,7 @@
   <header class="app-header">
     <div style="display: flex; align-items: center;">
       <h1>💰 Kharcha Paani</h1>
-      <span class="sync-badge" id="syncStatus">Cloud On</span>
+      <span class="sync-badge" id="syncStatus">Ready</span>
     </div>
     <div class="month-nav">
       <button type="button" class="nav-btn" onclick="shiftMonth(-1)">‹</button>
@@ -283,7 +283,7 @@
   </nav>
 
   <script>
-    // Firebase Setup
+    // Safe Initialization & Fallback
     const firebaseConfig = {
       apiKey: "AIzaSyAz1fcZrwwQVB8KDAeNSJ249dCwMN8Fvg",
       authDomain: "kharcha-pani-ee1d0.firebaseapp.com",
@@ -296,10 +296,12 @@
 
     var db = null;
     try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+      }
     } catch(err) {
-      console.warn('Firebase init offline mode:', err);
+      console.warn('Firebase init warning:', err);
     }
 
     var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -345,23 +347,53 @@
     var activeCatFilter = 'ALL';
     var records = [];
 
-    // Realtime Database Listener
+    // Load initial fallback data or local storage
+    function loadLocalData() {
+      try {
+        var saved = localStorage.getItem('kharcha_local_records');
+        if (saved) {
+          records = JSON.parse(saved);
+        }
+      } catch(e) {}
+    }
+
+    function saveLocalData() {
+      try {
+        localStorage.setItem('kharcha_local_records', JSON.stringify(records));
+      } catch(e) {}
+    }
+
+    loadLocalData();
+
+    // Start Database Sync safely
     if (db) {
-      db.collection('expenses').onSnapshot(function(snapshot) {
-        records = [];
-        snapshot.forEach(function(doc) {
-          var item = doc.data();
-          item.id = doc.id;
-          records.push(item);
+      try {
+        db.collection('expenses').onSnapshot(function(snapshot) {
+          var cloudRecords = [];
+          snapshot.forEach(function(doc) {
+            var item = doc.data();
+            item.id = doc.id;
+            cloudRecords.push(item);
+          });
+          if (cloudRecords.length > 0 || records.length === 0) {
+            records = cloudRecords;
+          }
+          document.getElementById('syncStatus').innerText = 'Cloud Sync';
+          document.getElementById('syncStatus').style.background = '#16a34a';
+          render();
+        }, function(error) {
+          console.warn('Firestore sync error, using local:', error);
+          document.getElementById('syncStatus').innerText = 'Offline Mode';
+          document.getElementById('syncStatus').style.background = '#eab308';
+          render();
         });
-        document.getElementById('syncStatus').innerText = 'Cloud Sync';
-        document.getElementById('syncStatus').style.background = '#16a34a';
-        render();
-      }, function(error) {
-        console.warn('Firestore offline:', error);
-        document.getElementById('syncStatus').innerText = 'Offline Mode';
+      } catch(e) {
+        document.getElementById('syncStatus').innerText = 'Local Mode';
         document.getElementById('syncStatus').style.background = '#eab308';
-      });
+      }
+    } else {
+      document.getElementById('syncStatus').innerText = 'Local Mode';
+      document.getElementById('syncStatus').style.background = '#eab308';
     }
 
     window.showScreen = function(viewName) {
@@ -385,6 +417,7 @@
 
     window.updateCategoryDropdown = function(type) {
       var select = document.getElementById('fieldCategory');
+      if (!select) return;
       select.innerHTML = '';
       var list = categories[type];
       for (var i = 0; i < list.length; i++) {
@@ -397,50 +430,15 @@
 
     window.pickType = function(type) {
       activeType = type;
-      document.getElementById('tagExpense').className = (type === 'expense') ? 'type-btn selected-expense' : 'type-btn';
-      document.getElementById('tagIncome').className = (type === 'income') ? 'type-btn selected-income' : 'type-btn';
-      document.getElementById('formTitleText').innerText = (type === 'expense') ? '🔻 Add Expense' : '🔺 Add Income';
+      var tExp = document.getElementById('tagExpense');
+      var tInc = document.getElementById('tagIncome');
+      var fTitle = document.getElementById('formTitleText');
+      if (tExp) tExp.className = (type === 'expense') ? 'type-btn selected-expense' : 'type-btn';
+      if (tInc) tInc.className = (type === 'income') ? 'type-btn selected-income' : 'type-btn';
+      if (fTitle) fTitle.innerText = (type === 'expense') ? '🔻 Add Expense' : '🔺 Add Income';
       updateCategoryDropdown(type);
     };
 
     window.launchForm = function(type) {
       pickType(type);
-      document.getElementById('fieldTime').value = getNowDateTime();
-      document.getElementById('fieldAmount').value = '';
-      document.getElementById('fieldDesc').value = '';
-      showScreen('form');
-    };
-
-    window.setCategoryFilter = function(cat) {
-      activeCatFilter = cat;
-      var pills = document.querySelectorAll('.cat-pill');
-      for (var i = 0; i < pills.length; i++) {
-        var p = pills[i];
-        if ((cat === 'ALL' && p.innerText === 'All') || p.innerText.indexOf(cat) !== -1) {
-          p.className = 'cat-pill active';
-        } else {
-          p.className = 'cat-pill';
-        }
-      }
-      render();
-    };
-
-    window.deleteRecord = function(docId) {
-      if (db) {
-        db.collection('expenses').doc(String(docId)).delete();
-      } else {
-        records = records.filter(function(x) { return x.id !== docId; });
-        render();
-      }
-    };
-
-    window.submitEntry = function() {
-      var amtInput = document.getElementById('fieldAmount');
-      var amt = parseFloat(amtInput.value);
-
-      if (!amtInput.value || isNaN(amt) || amt <= 0) {
-        amtInput.focus();
-        return;
-      }
-
-      var cat = document.getElementById('fi
+      var fTime = document
