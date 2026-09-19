@@ -15,7 +15,7 @@
 
     .app-header { background: #0f172a; color: #ffffff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
     .app-header h1 { font-size: 1.15rem; font-weight: 700; }
-
+    
     .sync-badge { font-size: 0.68rem; padding: 3px 8px; border-radius: 12px; background: #16a34a; color: #fff; font-weight: 600; margin-left: 6px; }
 
     .month-nav { display: flex; align-items: center; gap: 6px; background: #1e293b; padding: 4px 10px; border-radius: 20px; }
@@ -193,7 +193,7 @@
           </select>
         </div>
 
-        <button type="button" class="btn-submit" id="btnSubmitForm" onclick="submitEntry()">Save Transaction</button>
+        <button type="button" class="btn-submit" onclick="submitEntry()">Save Transaction</button>
       </div>
     </div>
 
@@ -443,4 +443,4 @@
         return;
       }
 
-      var cat = document.get
+      var cat = document.getElementById('fi
