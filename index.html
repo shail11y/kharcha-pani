@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kharcha Paani</title>
 
-<!-- Firebase App & Firestore SDKs (Compat Version - Best for WebViews & GitHub Pages) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;}
 body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
@@ -78,7 +74,7 @@ body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
 <header class="app-header">
   <div>
     <h1>💰 Kharcha Paani</h1>
-    <div class="cloud-status" id="cloudStatus">☁ Connected to Cloud</div>
+    <div class="cloud-status" id="cloudStatus">⚡ Ready & Fast</div>
   </div>
   <div class="month-nav">
     <button class="nav-btn" onclick="shiftMonth(-1)">‹</button>
@@ -128,7 +124,7 @@ body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
       <span style="font-size:.78rem;color:#64748b" id="txCountBadge">0 entries</span>
     </div>
 
-    <div id="txList"><div class="loading">☁ Loading data...</div></div>
+    <div id="txList"></div>
   </div>
 
   <!-- FORM -->
@@ -209,24 +205,6 @@ body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
 </nav>
 
 <script>
-  // Firebase Configuration & Initialization (Compat Direct Firestore)
-  const firebaseConfig = {
-    apiKey: "AIzaSyAzZfcZrW4QVBSWD4tN5J249mUcwNNBFwg",
-    authDomain: "kharcha-pani-ee1dd.firebaseapp.com",
-    projectId: "kharcha-pani-ee1dd",
-    storageBucket: "kharcha-pani-ee1dd.firebasestorage.app",
-    messagingSenderId: "665152767652",
-    appId: "1:665152767652:web:3ed8ff8d711d96f8684831"
-  };
-
-  var db = null;
-  try {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-  } catch(e) {
-    console.error("Firebase init error:", e);
-  }
-
   var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   var categories = {
     expense: [{name:"Food",icon:"🍔"},{name:"Grocery",icon:"🛒"},{name:"Fuel",icon:"⛽"},{name:"Rent",icon:"🏠"},{name:"Bills",icon:"⚡"},{name:"Shopping",icon:"🛍️"},{name:"Other",icon:"📦"}],
@@ -254,30 +232,21 @@ body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
   var activeCatFilter = "ALL";
   var records = [];
 
-  // Load Realtime Data from Firestore Collection 'expenses'
-  if (db) {
-    db.collection("expenses").orderBy("date", "desc").onSnapshot(function(snapshot) {
-      records = [];
-      snapshot.forEach(function(docSnap) {
-        var data = docSnap.data();
-        records.push({
-          id: docSnap.id,
-          type: data.type || "expense",
-          category: data.category || "Other",
-          title: data.title || data.category || "Other",
-          amount: Number(data.amount) || 0,
-          mode: data.mode || "Online",
-          date: data.date || ""
-        });
-      });
-      document.getElementById("cloudStatus").innerText = "☁ Live Cloud Synced";
-      render();
-    }, function(error) {
-      console.error(error);
-      document.getElementById("cloudStatus").innerText = "⚠️ Offline Mode Active";
-      document.getElementById("cloudStatus").style.color = "#f59e0b";
-    });
+  // Load from LocalStorage
+  function loadLocalData() {
+    try {
+      var saved = localStorage.getItem('kharcha_local_records');
+      if (saved) { records = JSON.parse(saved); }
+    } catch(e) {}
   }
+
+  function saveLocalData() {
+    try {
+      localStorage.setItem('kharcha_local_records', JSON.stringify(records));
+    } catch(e) {}
+  }
+
+  loadLocalData();
 
   window.showScreen = function(viewName) {
     document.getElementById("viewHome").style.display = viewName === "home" ? "block" : "none";
@@ -340,53 +309,39 @@ body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
     render();
   };
 
-  window.deleteRecord = function(docId) {
-    if(db) {
-      db.collection("expenses").doc(String(docId)).delete().catch(function(err){});
-    }
+  window.deleteRecord = function(recordId) {
+    records = records.filter(function(x) { return String(x.id) !== String(recordId); });
+    saveLocalData();
+    render();
   };
 
-window.submitEntry = function() {
-  var amtInput = document.getElementById("fieldAmount");
-  if(!amtInput) return;
-  var amt = parseFloat(amtInput.value);
+  window.submitEntry = function() {
+    var amtInput = document.getElementById("fieldAmount");
+    if(!amtInput) return;
+    var amt = parseFloat(amtInput.value);
 
-  if(!amtInput.value || isNaN(amt) || amt <= 0){
-    amtInput.focus();
-    return;
-  }
-
-  var cat = document.getElementById("fieldCategory").value || "Other";
-  var desc = document.getElementById("fieldDesc").value.trim() || cat;
-  var timeVal = document.getElementById("fieldTime").value || getNowDateTime();
-  var mode = document.getElementById("fieldMode").value;
-
-  var newRecord = {
-    type: activeType,
-    category: cat,
-    title: desc,
-    amount: amt,
-    mode: mode,
-    date: timeVal,
-    createdAt: Date.now()
-  };
-
-  if (db) {
-    db.collection("expenses").add(newRecord).catch(function(err){
-      console.error("Error adding transaction:", err);
-    });
-  }
-
-  if(timeVal.length >= 7){
-    currentYear = parseInt(timeVal.substring(0,4),10);
-    currentMonth = parseInt(timeVal.substring(5,7),10)-1;
-  }
-
-  setCategoryFilter("ALL");
-  showScreen("home");
-};
-
+    if(!amtInput.value || isNaN(amt) || amt <= 0){
+      amtInput.focus();
+      return;
     }
+
+    var cat = document.getElementById("fieldCategory").value || "Other";
+    var desc = document.getElementById("fieldDesc").value.trim() || cat;
+    var timeVal = document.getElementById("fieldTime").value || getNowDateTime();
+    var mode = document.getElementById("fieldMode").value;
+
+    var newRecord = {
+      id: 'tx_' + Date.now(),
+      type: activeType,
+      category: cat,
+      title: desc,
+      amount: amt,
+      mode: mode,
+      date: timeVal
+    };
+
+    records.unshift(newRecord);
+    saveLocalData();
 
     if(timeVal.length >= 7){
       currentYear = parseInt(timeVal.substring(0,4),10);
@@ -469,55 +424,4 @@ window.submitEntry = function() {
             '</div>' +
           '</div>' +
           '<div style="display:flex;align-items:center;">' +
-            '<div class="tx-amount ' + (isExp ? 'val-expense' : 'val-income') + '">' + (isExp ? "-" : "+") + " ₹ " + amt.toLocaleString("en-IN") + '</div>' +
-            '<button type="button" class="btn-del" onclick="deleteRecord(\'' + rowItem.id + '\')">🗑️</button>' +
-          '</div>';
-        container.appendChild(card);
-      }
-    }
-
-    var net = incomeSum - expenseSum;
-    document.getElementById("valIncome").innerText = "+ ₹ " + incomeSum.toLocaleString("en-IN");
-    document.getElementById("valExpense").innerText = "- ₹ " + expenseSum.toLocaleString("en-IN");
-    document.getElementById("valNet").innerText = "₹ " + net.toLocaleString("en-IN");
-    document.getElementById("txCountBadge").innerText = displayRecords.length + " entries";
-
-    document.getElementById("repTotalIncome").innerText = "₹ " + incomeSum.toLocaleString("en-IN");
-    document.getElementById("repTotalExpense").innerText = "₹ " + expenseSum.toLocaleString("en-IN");
-    document.getElementById("repTotalCount").innerText = monthRecords.length;
-
-    var rate = incomeSum > 0 ? Math.max(0, Math.round((net / incomeSum) * 100)) : 0;
-    document.getElementById("repSavingsRate").innerText = rate + "%";
-
-    document.getElementById("repCashBalance").innerText = "₹ " + (cashIn - cashOut).toLocaleString("en-IN");
-    document.getElementById("repCashIn").innerText = "+₹" + cashIn.toLocaleString("en-IN");
-    document.getElementById("repCashOut").innerText = "-₹" + cashOut.toLocaleString("en-IN");
-    document.getElementById("repOnlineBalance").innerText = "₹ " + (onlineIn - onlineOut).toLocaleString("en-IN");
-    document.getElementById("repOnlineIn").innerText = "+₹" + onlineIn.toLocaleString("en-IN");
-    document.getElementById("repOnlineOut").innerText = "-₹" + onlineOut.toLocaleString("en-IN");
-
-    var tbody = document.getElementById("tallyBody");
-    if(!tbody) return;
-    tbody.innerHTML = "";
-    var tKeys = Object.keys(tallyMap);
-    if(tKeys.length === 0){
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:10px;">No expenses recorded</td></tr>';
-    } else {
-      for(var t=0;t<tKeys.length;t++){
-        var cName = tKeys[t];
-        var r = tallyMap[cName];
-        var tr = document.createElement("tr");
-        tr.innerHTML = '<td><strong>' + getCatIcon(cName, 'expense') + ' ' + cName + '</strong></td>' +
-                       '<td class="tar">₹ ' + r.cash.toLocaleString('en-IN') + '</td>' +
-                       '<td class="tar">₹ ' + r.online.toLocaleString('en-IN') + '</td>' +
-                       '<td class="tar"><strong class="val-expense">₹ ' + r.total.toLocaleString('en-IN') + '</strong></td>';
-        tbody.appendChild(tr);
-      }
-    }
-  }
-
-  updateCategoryDropdown("expense");
-  showScreen("home");
-</script>
-</body>
-</html>
+            '<div class="tx-amount ' + (isExp ? 'val-expense' : 'val-income') + '">' + (isExp ? "
