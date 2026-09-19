@@ -5,2101 +5,508 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kharcha Paani</title>
 
+<!-- Firebase App & Firestore SDKs (Compat Version - Best for WebViews & GitHub Pages) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:system-ui,-apple-system,sans-serif;
-}
-
-body{
-  background:#f8fafc;
-  color:#0f172a;
-  padding-bottom:80px;
-}
-
-.app-header{
-  background:#0f172a;
-  color:#fff;
-  padding:12px 18px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  position:sticky;
-  top:0;
-  z-index:100;
-}
-
-.app-header h1{
-  font-size:1.15rem;
-  font-weight:700;
-}
-
-.cloud-status{
-  font-size:.62rem;
-  margin-top:2px;
-  color:#f59e0b;
-}
-
-.month-nav{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  background:#1e293b;
-  padding:4px 10px;
-  border-radius:20px;
-}
-
-.nav-btn{
-  background:none;
-  border:none;
-  color:#94a3b8;
-  font-size:1.1rem;
-  cursor:pointer;
-  padding:2px 6px;
-}
-
-.month-label{
-  font-size:.8rem;
-  font-weight:600;
-  min-width:80px;
-  text-align:center;
-  color:#f8fafc;
-}
-
-.container{
-  padding:16px;
-  max-width:480px;
-  margin:0 auto;
-}
-
-.balance-card{
-  background:linear-gradient(135deg,#1e293b,#0f172a);
-  color:#fff;
-  border-radius:16px;
-  padding:18px;
-  box-shadow:0 4px 15px rgba(15,23,42,.15);
-  margin-bottom:16px;
-}
-
-.balance-label{
-  font-size:.72rem;
-  color:#94a3b8;
-  text-transform:uppercase;
-  font-weight:600;
-  letter-spacing:.5px;
-}
-
-.balance-amount{
-  font-size:1.85rem;
-  font-weight:800;
-  margin:4px 0 14px;
-}
-
-.income-expense-row{
-  display:flex;
-  gap:12px;
-  border-top:1px solid #334155;
-  padding-top:12px;
-}
-
-.sub-stat{
-  flex:1;
-}
-
-.sub-stat-title{
-  font-size:.72rem;
-  color:#94a3b8;
-}
-
-.sub-stat-val{
-  font-size:1.05rem;
-  font-weight:700;
-  margin-top:2px;
-}
-
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;}
+body{background:#f8fafc;color:#0f172a;padding-bottom:80px;}
+.app-header{background:#0f172a;color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.app-header h1{font-size:1.15rem;font-weight:700;}
+.cloud-status{font-size:.68rem;margin-top:2px;color:#22c55e;font-weight:600;}
+.month-nav{display:flex;align-items:center;gap:6px;background:#1e293b;padding:4px 10px;border-radius:20px;}
+.nav-btn{background:none;border:none;color:#94a3b8;font-size:1.1rem;cursor:pointer;padding:2px 6px;}
+.month-label{font-size:.8rem;font-weight:600;min-width:80px;text-align:center;color:#f8fafc;}
+.container{padding:16px;max-width:480px;margin:0 auto;}
+.balance-card{background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;border-radius:16px;padding:18px;box-shadow:0 4px 15px rgba(15,23,42,.15);margin-bottom:16px;}
+.balance-label{font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:600;letter-spacing:.5px;}
+.balance-amount{font-size:1.85rem;font-weight:800;margin:4px 0 14px;}
+.income-expense-row{display:flex;gap:12px;border-top:1px solid #334155;padding-top:12px;}
+.sub-stat{flex:1;}
+.sub-stat-title{font-size:.72rem;color:#94a3b8;}
+.sub-stat-val{font-size:1.05rem;font-weight:700;margin-top:2px;}
 .val-income{color:#22c55e}
 .val-expense{color:#ef4444}
-
-.action-grid{
-  display:flex;
-  gap:12px;
-  margin-bottom:14px;
-}
-
-.btn-action{
-  flex:1;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  font-size:.9rem;
-  font-weight:700;
-  cursor:pointer;
-}
-
-.btn-expense{
-  background:#fee2e2;
-  color:#dc2626;
-}
-
-.btn-income{
-  background:#dcfce7;
-  color:#16a34a;
-}
-
-.cat-scroll-bar{
-  display:flex;
-  gap:8px;
-  margin-bottom:14px;
-  overflow-x:auto;
-  padding-bottom:4px;
-  scrollbar-width:none;
-}
-
-.cat-scroll-bar::-webkit-scrollbar{
-  display:none;
-}
-
-.cat-pill{
-  padding:6px 12px;
-  background:#fff;
-  border:1px solid #cbd5e1;
-  border-radius:20px;
-  font-size:.75rem;
-  font-weight:600;
-  color:#475569;
-  cursor:pointer;
-  white-space:nowrap;
-}
-
-.cat-pill.active{
-  background:#0f172a;
-  color:#fff;
-  border-color:#0f172a;
-}
-
-.section-title{
-  font-size:.95rem;
-  font-weight:700;
-  color:#334155;
-  margin-bottom:12px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.tx-card{
-  background:#fff;
-  border-radius:12px;
-  padding:12px 14px;
-  border:1px solid #e2e8f0;
-  margin-bottom:8px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.tx-info{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  min-width:0;
-}
-
-.tx-icon{
-  width:38px;
-  height:38px;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:1.15rem;
-  flex-shrink:0;
-}
-
+.action-grid{display:flex;gap:12px;margin-bottom:14px;}
+.btn-action{flex:1;padding:12px;border:none;border-radius:12px;font-size:.9rem;font-weight:700;cursor:pointer;}
+.btn-expense{background:#fee2e2;color:#dc2626;}
+.btn-income{background:#dcfce7;color:#16a34a;}
+.cat-scroll-bar{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.cat-scroll-bar::-webkit-scrollbar{display:none;}
+.cat-pill{padding:6px 12px;background:#fff;border:1px solid #cbd5e1;border-radius:20px;font-size:.75rem;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;}
+.cat-pill.active{background:#0f172a;color:#fff;border-color:#0f172a;}
+.section-title{font-size:.95rem;font-weight:700;color:#334155;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.tx-card{background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.tx-info{display:flex;gap:10px;align-items:center;min-width:0;}
+.tx-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;}
 .tx-icon.expense{background:#fee2e2}
 .tx-icon.income{background:#dcfce7}
-
-.tx-title{
-  font-size:.9rem;
-  font-weight:600;
-  color:#0f172a;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  max-width:170px;
-}
-
-.tx-date{
-  font-size:.68rem;
-  color:#64748b;
-  margin-top:2px;
-}
-
-.tx-amount{
-  font-size:.95rem;
-  font-weight:700;
-  white-space:nowrap;
-}
-
-.btn-del{
-  border:none;
-  background:none;
-  color:#cbd5e1;
-  font-size:1rem;
-  cursor:pointer;
-  padding:4px;
-  margin-left:5px;
-}
-
-.empty-state{
-  text-align:center;
-  color:#94a3b8;
-  padding:30px 10px;
-  font-size:.85rem;
-}
-
-.form-card{
-  background:#fff;
-  border-radius:14px;
-  padding:18px;
-  border:1px solid #e2e8f0;
-  margin-bottom:14px;
-}
-
-.form-group{
-  margin-bottom:14px;
-}
-
-.form-label{
-  display:block;
-  font-size:.8rem;
-  font-weight:600;
-  color:#475569;
-  margin-bottom:5px;
-}
-
-.form-input,
-.form-select{
-  width:100%;
-  padding:11px;
-  border:1.5px solid #cbd5e1;
-  border-radius:8px;
-  font-size:.92rem;
-  outline:none;
-  background:#fff;
-}
-
-.type-selector{
-  display:flex;
-  gap:10px;
-  margin-bottom:14px;
-}
-
-.type-btn{
-  flex:1;
-  padding:10px;
-  border:2px solid #e2e8f0;
-  border-radius:8px;
-  background:#fff;
-  font-weight:700;
-  cursor:pointer;
-  text-align:center;
-  font-size:.9rem;
-}
-
-.selected-expense{
-  background:#fee2e2;
-  border-color:#ef4444;
-  color:#dc2626;
-}
-
-.selected-income{
-  background:#dcfce7;
-  border-color:#22c55e;
-  color:#16a34a;
-}
-
-.btn-submit{
-  width:100%;
-  padding:12px;
-  background:#0f172a;
-  color:#fff;
-  border:none;
-  border-radius:10px;
-  font-size:.95rem;
-  font-weight:700;
-  cursor:pointer;
-}
-
-.btn-submit:disabled{
-  opacity:.6;
-}
-
-.report-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-bottom:14px;
-}
-
-.report-mini-card{
-  background:#fff;
-  border:1px solid #e2e8f0;
-  border-radius:12px;
-  padding:12px;
-}
-
-.report-mini-card h4{
-  font-size:.75rem;
-  color:#475569;
-  margin-bottom:4px;
-}
-
-.report-mini-amount{
-  font-size:1.1rem;
-  font-weight:800;
-}
-
-.report-sub-text{
-  font-size:.7rem;
-  color:#64748b;
-  margin-top:4px;
-  line-height:1.3;
-}
-
-.tally-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:.78rem;
-}
-
-.tally-table th{
-  background:#f1f5f9;
-  padding:8px 6px;
-  text-align:left;
-  color:#475569;
-  font-weight:700;
-}
-
-.tally-table td{
-  padding:8px 6px;
-  border-bottom:1px solid #f1f5f9;
-}
-
-.tar{
-  text-align:right;
-}
-
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  background:#fff;
-  border-top:1px solid #e2e8f0;
-  display:flex;
-  height:60px;
-  z-index:1000;
-}
-
-.nav-item{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  color:#64748b;
-  font-size:.72rem;
-  font-weight:600;
-  cursor:pointer;
-  border:none;
-  background:none;
-}
-
-.nav-item.active{
-  color:#2563eb;
-}
-
-.nav-icon{
-  font-size:1.15rem;
-  margin-bottom:2px;
-}
-
-.loading{
-  text-align:center;
-  padding:30px;
-  color:#64748b;
-}
+.tx-title{font-size:.9rem;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;}
+.tx-date{font-size:.68rem;color:#64748b;margin-top:2px;}
+.tx-amount{font-size:.95rem;font-weight:700;white-space:nowrap;}
+.btn-del{border:none;background:none;color:#cbd5e1;font-size:1rem;cursor:pointer;padding:4px;margin-left:5px;}
+.empty-state{text-align:center;color:#94a3b8;padding:30px 10px;font-size:.85rem;}
+.form-card{background:#fff;border-radius:14px;padding:18px;border:1px solid #e2e8f0;margin-bottom:14px;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:5px;}
+.form-input,.form-select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:.92rem;outline:none;background:#fff;}
+.type-selector{display:flex;gap:10px;margin-bottom:14px;}
+.type-btn{flex:1;padding:10px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:700;cursor:pointer;text-align:center;font-size:.9rem;}
+.selected-expense{background:#fee2e2;border-color:#ef4444;color:#dc2626;}
+.selected-income{background:#dcfce7;border-color:#22c55e;color:#16a34a;}
+.btn-submit{width:100%;padding:12px;background:#0f172a;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;}
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.report-mini-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;}
+.report-mini-card h4{font-size:.75rem;color:#475569;margin-bottom:4px;}
+.report-mini-amount{font-size:1.1rem;font-weight:800;}
+.report-sub-text{font-size:.7rem;color:#64748b;margin-top:4px;line-height:1.3;}
+.tally-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+.tally-table th{background:#f1f5f9;padding:8px 6px;text-align:left;color:#475569;font-weight:700;}
+.tally-table td{padding:8px 6px;border-bottom:1px solid #f1f5f9;}
+.tar{text-align:right;}
+.bottom-nav{position:fixed;bottom:0;left:0;width:100%;background:#fff;border-top:1px solid #e2e8f0;display:flex;height:60px;z-index:1000;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#64748b;font-size:.72rem;font-weight:600;cursor:pointer;border:none;background:none;}
+.nav-item.active{color:#2563eb;}
+.nav-icon{font-size:1.15rem;margin-bottom:2px;}
+.loading{text-align:center;padding:30px;color:#64748b;}
 </style>
 </head>
 
 <body>
 
 <header class="app-header">
-
   <div>
     <h1>💰 Kharcha Paani</h1>
-    <div class="cloud-status" id="cloudStatus">
-      ☁ Connecting...
-    </div>
+    <div class="cloud-status" id="cloudStatus">☁ Connected to Cloud</div>
   </div>
-
   <div class="month-nav">
     <button class="nav-btn" onclick="shiftMonth(-1)">‹</button>
     <span class="month-label" id="monthBadge">Month</span>
     <button class="nav-btn" onclick="shiftMonth(1)">›</button>
   </div>
-
 </header>
 
-
 <div class="container">
-
-<!-- HOME -->
-
-<div id="viewHome">
-
-  <div class="balance-card">
-
-    <div class="balance-label">
-      Net Balance
-    </div>
-
-    <div class="balance-amount" id="valNet">
-      ₹ 0
-    </div>
-
-    <div class="income-expense-row">
-
-      <div class="sub-stat">
-        <div class="sub-stat-title">Income</div>
-        <div class="sub-stat-val val-income" id="valIncome">
-          + ₹ 0
+  <!-- HOME -->
+  <div id="viewHome">
+    <div class="balance-card">
+      <div class="balance-label">Net Balance</div>
+      <div class="balance-amount" id="valNet">₹ 0</div>
+      <div class="income-expense-row">
+        <div class="sub-stat">
+          <div class="sub-stat-title">Income</div>
+          <div class="sub-stat-val val-income" id="valIncome">+ ₹ 0</div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-title">Expense</div>
+          <div class="sub-stat-val val-expense" id="valExpense">- ₹ 0</div>
         </div>
       </div>
+    </div>
 
-      <div class="sub-stat">
-        <div class="sub-stat-title">Expense</div>
-        <div class="sub-stat-val val-expense" id="valExpense">
-          - ₹ 0
-        </div>
+    <div class="action-grid">
+      <button class="btn-action btn-expense" onclick="launchForm('expense')">🔻 Add Expense</button>
+      <button class="btn-action btn-income" onclick="launchForm('income')">🔺 Add Income</button>
+    </div>
+
+    <div class="cat-scroll-bar">
+      <button class="cat-pill active" onclick="setCategoryFilter('ALL')">All</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Food')">🍔 Food</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Grocery')">🛒 Grocery</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Fuel')">⛽ Fuel</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Rent')">🏠 Rent</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Bills')">⚡ Bills</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Shopping')">🛍️ Shopping</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Salary')">💰 Salary</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Business')">💼 Business</button>
+      <button class="cat-pill" onclick="setCategoryFilter('Other')">📦 Other</button>
+    </div>
+
+    <div class="section-title">
+      <span>Transactions</span>
+      <span style="font-size:.78rem;color:#64748b" id="txCountBadge">0 entries</span>
+    </div>
+
+    <div id="txList"><div class="loading">☁ Loading data...</div></div>
+  </div>
+
+  <!-- FORM -->
+  <div id="viewForm" style="display:none">
+    <div class="section-title">
+      <span id="formTitleText">New Transaction</span>
+      <button onclick="showScreen('home')" style="border:none;background:none;color:#2563eb;font-weight:600;cursor:pointer;">✕ Cancel</button>
+    </div>
+    <div class="form-card">
+      <div class="type-selector">
+        <div class="type-btn selected-expense" id="tagExpense" onclick="pickType('expense')">🔻 Expense</div>
+        <div class="type-btn" id="tagIncome" onclick="pickType('income')">🔺 Income</div>
       </div>
-
-    </div>
-
-  </div>
-
-
-  <div class="action-grid">
-
-    <button class="btn-action btn-expense"
-      onclick="launchForm('expense')">
-      🔻 Add Expense
-    </button>
-
-    <button class="btn-action btn-income"
-      onclick="launchForm('income')">
-      🔺 Add Income
-    </button>
-
-  </div>
-
-
-  <div class="cat-scroll-bar">
-
-    <button class="cat-pill active"
-      onclick="setCategoryFilter('ALL')">
-      All
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Food')">
-      🍔 Food
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Grocery')">
-      🛒 Grocery
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Fuel')">
-      ⛽ Fuel
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Rent')">
-      🏠 Rent
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Bills')">
-      ⚡ Bills
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Shopping')">
-      🛍️ Shopping
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Salary')">
-      💰 Salary
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Business')">
-      💼 Business
-    </button>
-
-    <button class="cat-pill"
-      onclick="setCategoryFilter('Other')">
-      📦 Other
-    </button>
-
-  </div>
-
-
-  <div class="section-title">
-
-    <span>Transactions</span>
-
-    <span style="font-size:.78rem;color:#64748b"
-      id="txCountBadge">
-      0 entries
-    </span>
-
-  </div>
-
-
-  <div id="txList">
-    <div class="loading">
-      ☁ Loading data...
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="fieldCategory" class="form-select"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (₹)</label>
+        <input type="number" step="any" id="fieldAmount" class="form-input" placeholder="e.g. 500">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description / Note</label>
+        <input type="text" id="fieldDesc" class="form-input" placeholder="e.g. Petrol, Groceries, Dinner">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date & Time</label>
+        <input type="datetime-local" id="fieldTime" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Mode</label>
+        <select id="fieldMode" class="form-select">
+          <option value="Online">📱 UPI / Online / Card</option>
+          <option value="Cash">💵 Cash</option>
+        </select>
+      </div>
+      <button class="btn-submit" onclick="submitEntry()">Save Transaction</button>
     </div>
   </div>
 
+  <!-- REPORTS -->
+  <div id="viewReports" style="display:none">
+    <div class="section-title"><span>Payment Mode Split</span></div>
+    <div class="report-grid">
+      <div class="report-mini-card">
+        <h4>💵 Cash Balance</h4>
+        <div class="report-mini-amount" id="repCashBalance">₹ 0</div>
+        <div class="report-sub-text">In: <span class="val-income" id="repCashIn">+₹0</span><br>Out: <span class="val-expense" id="repCashOut">-₹0</span></div>
+      </div>
+      <div class="report-mini-card">
+        <h4>📱 Online Balance</h4>
+        <div class="report-mini-amount" id="repOnlineBalance">₹ 0</div>
+        <div class="report-sub-text">In: <span class="val-income" id="repOnlineIn">+₹0</span><br>Out: <span class="val-expense" id="repOnlineOut">-₹0</span></div>
+      </div>
+    </div>
+    <div class="section-title"><span>Category Expense Tally</span></div>
+    <div class="form-card" style="padding:10px">
+      <table class="tally-table">
+        <thead><tr><th>Category</th><th class="tar">Cash</th><th class="tar">Online</th><th class="tar">Total</th></tr></thead>
+        <tbody id="tallyBody"></tbody>
+      </table>
+    </div>
+    <div class="section-title"><span>Summary (<span id="repMonthLabel">Month</span>)</span></div>
+    <div class="form-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="color:#64748b">Total Income:</span><strong class="val-income" id="repTotalIncome">₹ 0</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="color:#64748b">Total Expenses:</span><strong class="val-expense" id="repTotalExpense">₹ 0</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="color:#64748b">Total Entries:</span><strong id="repTotalCount">0</strong></div>
+      <hr style="margin:10px 0;border:none;border-top:1px solid #e2e8f0">
+      <div style="display:flex;justify-content:space-between"><span style="font-weight:600">Savings Rate:</span><strong id="repSavingsRate">0%</strong></div>
+    </div>
+  </div>
 </div>
-
-
-
-<!-- FORM -->
-
-<div id="viewForm" style="display:none">
-
-  <div class="section-title">
-
-    <span id="formTitleText">
-      New Transaction
-    </span>
-
-    <button
-      onclick="showScreen('home')"
-      style="border:none;background:none;color:#2563eb;font-weight:600">
-      ✕ Cancel
-    </button>
-
-  </div>
-
-
-  <div class="form-card">
-
-    <div class="type-selector">
-
-      <div
-        class="type-btn selected-expense"
-        id="tagExpense"
-        onclick="pickType('expense')">
-        🔻 Expense
-      </div>
-
-      <div
-        class="type-btn"
-        id="tagIncome"
-        onclick="pickType('income')">
-        🔺 Income
-      </div>
-
-    </div>
-
-
-    <div class="form-group">
-
-      <label class="form-label">
-        Category
-      </label>
-
-      <select
-        id="fieldCategory"
-        class="form-select">
-      </select>
-
-    </div>
-
-
-    <div class="form-group">
-
-      <label class="form-label">
-        Amount (₹)
-      </label>
-
-      <input
-        type="number"
-        step="any"
-        id="fieldAmount"
-        class="form-input"
-        placeholder="e.g. 500">
-
-    </div>
-
-
-    <div class="form-group">
-
-      <label class="form-label">
-        Description / Note
-      </label>
-
-      <input
-        type="text"
-        id="fieldDesc"
-        class="form-input"
-        placeholder="e.g. Petrol, Groceries, Dinner">
-
-    </div>
-
-
-    <div class="form-group">
-
-      <label class="form-label">
-        Date & Time
-      </label>
-
-      <input
-        type="datetime-local"
-        id="fieldTime"
-        class="form-input">
-
-    </div>
-
-
-    <div class="form-group">
-
-      <label class="form-label">
-        Payment Mode
-      </label>
-
-      <select
-        id="fieldMode"
-        class="form-select">
-
-        <option value="Online">
-          📱 UPI / Online / Card
-        </option>
-
-        <option value="Cash">
-          💵 Cash
-        </option>
-
-      </select>
-
-    </div>
-
-
-    <button
-      id="saveBtn"
-      class="btn-submit"
-      onclick="submitEntry()">
-
-      Save Transaction
-
-    </button>
-
-  </div>
-
-</div>
-
-
-
-<!-- REPORTS -->
-
-<div id="viewReports" style="display:none">
-
-  <div class="section-title">
-    <span>Payment Mode Split</span>
-  </div>
-
-
-  <div class="report-grid">
-
-    <div class="report-mini-card">
-
-      <h4>💵 Cash Balance</h4>
-
-      <div
-        class="report-mini-amount"
-        id="repCashBalance">
-        ₹ 0
-      </div>
-
-      <div class="report-sub-text">
-
-        In:
-        <span class="val-income" id="repCashIn">
-          +₹0
-        </span>
-
-        <br>
-
-        Out:
-        <span class="val-expense" id="repCashOut">
-          -₹0
-        </span>
-
-      </div>
-
-    </div>
-
-
-    <div class="report-mini-card">
-
-      <h4>📱 Online Balance</h4>
-
-      <div
-        class="report-mini-amount"
-        id="repOnlineBalance">
-        ₹ 0
-      </div>
-
-      <div class="report-sub-text">
-
-        In:
-        <span class="val-income" id="repOnlineIn">
-          +₹0
-        </span>
-
-        <br>
-
-        Out:
-        <span class="val-expense" id="repOnlineOut">
-          -₹0
-        </span>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <div class="section-title">
-    <span>Category Expense Tally</span>
-  </div>
-
-
-  <div class="form-card" style="padding:10px">
-
-    <table class="tally-table">
-
-      <thead>
-
-        <tr>
-
-          <th>Category</th>
-
-          <th class="tar">Cash</th>
-
-          <th class="tar">Online</th>
-
-          <th class="tar">Total</th>
-
-        </tr>
-
-      </thead>
-
-      <tbody id="tallyBody"></tbody>
-
-    </table>
-
-  </div>
-
-
-  <div class="section-title">
-
-    <span>
-      Summary (<span id="repMonthLabel">Month</span>)
-    </span>
-
-  </div>
-
-
-  <div class="form-card">
-
-    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-      <span style="color:#64748b">Total Income:</span>
-      <strong class="val-income" id="repTotalIncome">
-        ₹ 0
-      </strong>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-      <span style="color:#64748b">Total Expenses:</span>
-      <strong class="val-expense" id="repTotalExpense">
-        ₹ 0
-      </strong>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-      <span style="color:#64748b">Total Entries:</span>
-      <strong id="repTotalCount">
-        0
-      </strong>
-    </div>
-
-    <hr style="margin:10px 0;border:none;border-top:1px solid #e2e8f0">
-
-    <div style="display:flex;justify-content:space-between">
-
-      <span style="font-weight:600">
-        Savings Rate:
-      </span>
-
-      <strong id="repSavingsRate">
-        0%
-      </strong>
-
-    </div>
-
-  </div>
-
-</div>
-
-</div>
-
-
-
-<!-- BOTTOM NAV -->
 
 <nav class="bottom-nav">
-
-  <button
-    class="nav-item active"
-    id="tabHome"
-    onclick="showScreen('home')">
-
-    <span class="nav-icon">🏠</span>
-    <span>Home</span>
-
-  </button>
-
-
-  <button
-    class="nav-item"
-    id="tabAdd"
-    onclick="launchForm('expense')">
-
-    <span class="nav-icon">➕</span>
-    <span>Add</span>
-
-  </button>
-
-
-  <button
-    class="nav-item"
-    id="tabReports"
-    onclick="showScreen('reports')">
-
-    <span class="nav-icon">📊</span>
-    <span>Reports</span>
-
-  </button>
-
+  <button class="nav-item active" id="tabHome" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span>Home</span></button>
+  <button class="nav-item" id="tabAdd" onclick="launchForm('expense')"><span class="nav-icon">➕</span><span>Add</span></button>
+  <button class="nav-item" id="tabReports" onclick="showScreen('reports')"><span class="nav-icon">📊</span><span>Reports</span></button>
 </nav>
 
-
-
-<!-- FIREBASE + APP -->
-
-<script type="module">
-
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-
-import {
-  getAuth,
-  signInAnonymously,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  query,
-  orderBy,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-
-
-
-/* =========================================
-   FIREBASE CONFIG
-========================================= */
-
-const firebaseConfig = {
-
-  apiKey:
-    "AIzaSyAzZfcZrW4QVBSWD4tN5J249mUcwNNBFwg",
-
-  authDomain:
-    "kharcha-pani-ee1dd.firebaseapp.com",
-
-  projectId:
-    "kharcha-pani-ee1dd",
-
-  storageBucket:
-    "kharcha-pani-ee1dd.firebasestorage.app",
-
-  messagingSenderId:
-    "665152767652",
-
-  appId:
-    "1:665152767652:web:3ed8ff8d711d96f8684831"
-
-};
-
-
-
-/* =========================================
-   FIREBASE INITIALIZE
-========================================= */
-
-const app = initializeApp(firebaseConfig);
-
-const auth = getAuth(app);
-
-const db = getFirestore(app);
-
-
-
-let currentUser = null;
-
-let unsubscribeTransactions = null;
-
-
-
-/* =========================================
-   APP VARIABLES
-========================================= */
-
-const monthNames = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec"
-];
-
-const categories = {
-
-  expense: [
-
-    {name:"Food",icon:"🍔"},
-    {name:"Grocery",icon:"🛒"},
-    {name:"Fuel",icon:"⛽"},
-    {name:"Rent",icon:"🏠"},
-    {name:"Bills",icon:"⚡"},
-    {name:"Shopping",icon:"🛍️"},
-    {name:"Other",icon:"📦"}
-
-  ],
-
-  income: [
-
-    {name:"Salary",icon:"💰"},
-    {name:"Business",icon:"💼"},
-    {name:"Cash In",icon:"💵"},
-    {name:"Other",icon:"📦"}
-
-  ]
-
-};
-
-
-
-let now = new Date();
-
-let currentYear = now.getFullYear();
-
-let currentMonth = now.getMonth();
-
-let activeType = "expense";
-
-let activeCatFilter = "ALL";
-
-let records = [];
-
-
-
-/* =========================================
-   FIREBASE LOGIN
-========================================= */
-
-signInAnonymously(auth)
-.then(() => {
-
-  console.log("Anonymous login successful");
-
-})
-.catch((error) => {
-
-  console.error(error);
-
-  document.getElementById("cloudStatus").innerText =
-    "❌ Firebase Login Error";
-
-});
-
-
-
-/* =========================================
-   AUTH STATE
-========================================= */
-
-onAuthStateChanged(auth, (user) => {
-
-  if (!user) return;
-
-  currentUser = user;
-
-  document.getElementById("cloudStatus").innerText =
-    "☁ Cloud Connected";
-
-  document.getElementById("cloudStatus").style.color =
-    "#22c55e";
-
-  loadTransactions();
-
-});
-
-
-
-/* =========================================
-   LOAD FIRESTORE DATA
-========================================= */
-
-function loadTransactions(){
-
-  if (!currentUser) return;
-
-  if (unsubscribeTransactions){
-    unsubscribeTransactions();
+<script>
+  // Firebase Configuration & Initialization (Compat Direct Firestore)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAzZfcZrW4QVBSWD4tN5J249mUcwNNBFwg",
+    authDomain: "kharcha-pani-ee1dd.firebaseapp.com",
+    projectId: "kharcha-pani-ee1dd",
+    storageBucket: "kharcha-pani-ee1dd.firebasestorage.app",
+    messagingSenderId: "665152767652",
+    appId: "1:665152767652:web:3ed8ff8d711d96f8684831"
+  };
+
+  var db = null;
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  } catch(e) {
+    console.error("Firebase init error:", e);
   }
 
-  const transactionsRef = collection(
-    db,
-    "users",
-    currentUser.uid,
-    "transactions"
-  );
+  var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var categories = {
+    expense: [{name:"Food",icon:"🍔"},{name:"Grocery",icon:"🛒"},{name:"Fuel",icon:"⛽"},{name:"Rent",icon:"🏠"},{name:"Bills",icon:"⚡"},{name:"Shopping",icon:"🛍️"},{name:"Other",icon:"📦"}],
+    income: [{name:"Salary",icon:"💰"},{name:"Business",icon:"💼"},{name:"Cash In",icon:"💵"},{name:"Other",icon:"📦"}]
+  };
 
-  const q = query(
-    transactionsRef,
-    orderBy("date","desc")
-  );
+  function getCatIcon(catName, type) {
+    var all = categories.expense.concat(categories.income);
+    for(var i=0;i<all.length;i++){
+      if(all[i].name.toLowerCase() === String(catName || "").toLowerCase()) return all[i].icon;
+    }
+    return type === "expense" ? "🛒" : "💵";
+  }
 
-  unsubscribeTransactions = onSnapshot(
-    q,
-    (snapshot) => {
+  function padZero(num) { return num < 10 ? "0" + num : String(num); }
+  function getNowDateTime() {
+    var d = new Date();
+    return d.getFullYear() + "-" + padZero(d.getMonth()+1) + "-" + padZero(d.getDate()) + "T" + padZero(d.getHours()) + ":" + padZero(d.getMinutes());
+  }
 
+  var now = new Date();
+  var currentYear = now.getFullYear();
+  var currentMonth = now.getMonth();
+  var activeType = "expense";
+  var activeCatFilter = "ALL";
+  var records = [];
+
+  // Load Realtime Data from Firestore Collection 'expenses'
+  if (db) {
+    db.collection("expenses").orderBy("date", "desc").onSnapshot(function(snapshot) {
       records = [];
-
-      snapshot.forEach((docSnap) => {
-
-        const data = docSnap.data();
-
+      snapshot.forEach(function(docSnap) {
+        var data = docSnap.data();
         records.push({
-
           id: docSnap.id,
-
           type: data.type || "expense",
-
           category: data.category || "Other",
-
           title: data.title || data.category || "Other",
-
           amount: Number(data.amount) || 0,
-
           mode: data.mode || "Online",
-
           date: data.date || ""
-
         });
-
       });
-
+      document.getElementById("cloudStatus").innerText = "☁ Live Cloud Synced";
       render();
-
-    },
-
-    (error) => {
-
+    }, function(error) {
       console.error(error);
+      document.getElementById("cloudStatus").innerText = "⚠️ Offline Mode Active";
+      document.getElementById("cloudStatus").style.color = "#f59e0b";
+    });
+  }
 
-      document.getElementById("cloudStatus").innerText =
-        "❌ Database Error";
+  window.showScreen = function(viewName) {
+    document.getElementById("viewHome").style.display = viewName === "home" ? "block" : "none";
+    document.getElementById("viewForm").style.display = viewName === "form" ? "block" : "none";
+    document.getElementById("viewReports").style.display = viewName === "reports" ? "block" : "none";
 
-      document.getElementById("cloudStatus").style.color =
-        "#ef4444";
+    document.getElementById("tabHome").className = viewName === "home" ? "nav-item active" : "nav-item";
+    document.getElementById("tabAdd").className = viewName === "form" ? "nav-item active" : "nav-item";
+    document.getElementById("tabReports").className = viewName === "reports" ? "nav-item active" : "nav-item";
+    render();
+  };
 
+  window.shiftMonth = function(delta) {
+    currentMonth += delta;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    render();
+  };
+
+  window.updateCategoryDropdown = function(type) {
+    var select = document.getElementById("fieldCategory");
+    if(!select) return;
+    select.innerHTML = "";
+    var list = categories[type];
+    for(var i=0;i<list.length;i++){
+      var opt = document.createElement("option");
+      opt.value = list[i].name;
+      opt.textContent = list[i].icon + " " + list[i].name;
+      select.appendChild(opt);
     }
-
-  );
-
-}
-
-
-
-/* =========================================
-   CATEGORY ICON
-========================================= */
-
-function getCatIcon(catName,type){
-
-  const all =
-    categories.expense.concat(categories.income);
-
-  for(let i=0;i<all.length;i++){
-
-    if(
-      all[i].name.toLowerCase() ===
-      String(catName || "").toLowerCase()
-    ){
-
-      return all[i].icon;
-
-    }
-
-  }
-
-  return type === "expense" ? "🛒" : "💵";
-
-}
-
-
-
-/* =========================================
-   HTML SECURITY
-========================================= */
-
-function escapeHTML(value){
-
-  return String(value || "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-
-}
-
-
-
-/* =========================================
-   DATE
-========================================= */
-
-function padZero(num){
-
-  return num < 10 ? "0" + num : String(num);
-
-}
-
-
-function getNowDateTime(){
-
-  const d = new Date();
-
-  return (
-
-    d.getFullYear() +
-
-    "-" +
-
-    padZero(d.getMonth()+1) +
-
-    "-" +
-
-    padZero(d.getDate()) +
-
-    "T" +
-
-    padZero(d.getHours()) +
-
-    ":" +
-
-    padZero(d.getMinutes())
-
-  );
-
-}
-
-
-
-/* =========================================
-   SCREEN
-========================================= */
-
-window.showScreen = function(viewName){
-
-  document.getElementById("viewHome").style.display =
-    viewName === "home" ? "block" : "none";
-
-  document.getElementById("viewForm").style.display =
-    viewName === "form" ? "block" : "none";
-
-  document.getElementById("viewReports").style.display =
-    viewName === "reports" ? "block" : "none";
-
-
-  document.getElementById("tabHome").className =
-    viewName === "home"
-      ? "nav-item active"
-      : "nav-item";
-
-  document.getElementById("tabAdd").className =
-    viewName === "form"
-      ? "nav-item active"
-      : "nav-item";
-
-  document.getElementById("tabReports").className =
-    viewName === "reports"
-      ? "nav-item active"
-      : "nav-item";
-
-  render();
-
-};
-
-
-
-/* =========================================
-   MONTH CHANGE
-========================================= */
-
-window.shiftMonth = function(delta){
-
-  currentMonth += delta;
-
-  if(currentMonth < 0){
-
-    currentMonth = 11;
-    currentYear--;
-
-  }
-
-  if(currentMonth > 11){
-
-    currentMonth = 0;
-    currentYear++;
-
-  }
-
-  render();
-
-};
-
-
-
-/* =========================================
-   CATEGORY DROPDOWN
-========================================= */
-
-function updateCategoryDropdown(type){
-
-  const select =
-    document.getElementById("fieldCategory");
-
-  select.innerHTML = "";
-
-  categories[type].forEach((item) => {
-
-    const option =
-      document.createElement("option");
-
-    option.value = item.name;
-
-    option.textContent =
-      item.icon + " " + item.name;
-
-    select.appendChild(option);
-
-  });
-
-}
-
-
-
-/* =========================================
-   TYPE SELECT
-========================================= */
-
-window.pickType = function(type){
-
-  activeType = type;
-
-  document.getElementById("tagExpense").className =
-    type === "expense"
-      ? "type-btn selected-expense"
-      : "type-btn";
-
-  document.getElementById("tagIncome").className =
-    type === "income"
-      ? "type-btn selected-income"
-      : "type-btn";
-
-
-  document.getElementById("formTitleText").innerText =
-    type === "expense"
-      ? "🔻 Add Expense"
-      : "🔺 Add Income";
-
-
-  updateCategoryDropdown(type);
-
-};
-
-
-
-/* =========================================
-   OPEN FORM
-========================================= */
-
-window.launchForm = function(type){
-
-  pickType(type);
-
-  document.getElementById("fieldTime").value =
-    getNowDateTime();
-
-  document.getElementById("fieldAmount").value = "";
-
-  document.getElementById("fieldDesc").value = "";
-
-  document.getElementById("fieldMode").value =
-    "Online";
-
-  showScreen("form");
-
-};
-
-
-
-/* =========================================
-   FILTER
-========================================= */
-
-window.setCategoryFilter = function(cat){
-
-  activeCatFilter = cat;
-
-  const pills =
-    document.querySelectorAll(".cat-pill");
-
-  pills.forEach((pill) => {
-
-    if(
-      (cat === "ALL" &&
-       pill.innerText === "All") ||
-
-      pill.innerText.indexOf(cat) !== -1
-    ){
-
-      pill.className = "cat-pill active";
-
-    }else{
-
-      pill.className = "cat-pill";
-
-    }
-
-  });
-
-  render();
-
-};
-
-
-
-/* =========================================
-   DELETE
-========================================= */
-
-window.deleteRecord = async function(id){
-
-  if(!currentUser) return;
-
-  const confirmDelete =
-    confirm("Delete this transaction?");
-
-  if(!confirmDelete) return;
-
-  try{
-
-    await deleteDoc(
-
-      doc(
-        db,
-        "users",
-        currentUser.uid,
-        "transactions",
-        id
-      )
-
-    );
-
-  }catch(error){
-
-    console.error(error);
-
-    alert(
-      "Transaction delete nahi hua."
-    );
-
-  }
-
-};
-
-
-
-/* =========================================
-   SAVE TRANSACTION
-========================================= */
-
-window.submitEntry = async function(){
-
-  if(!currentUser){
-
-    alert(
-      "Cloud connection ready nahi hai. Thoda wait karo."
-    );
-
-    return;
-
-  }
-
-
-  const amountInput =
-    document.getElementById("fieldAmount");
-
-  const amount =
-    parseFloat(amountInput.value);
-
-
-  if(
-    !amountInput.value ||
-    isNaN(amount) ||
-    amount <= 0
-  ){
-
-    amountInput.focus();
-
-    return;
-
-  }
-
-
-  const category =
-    document.getElementById("fieldCategory").value
-    || "Other";
-
-
-  const desc =
-    document.getElementById("fieldDesc").value.trim()
-    || category;
-
-
-  const time =
-    document.getElementById("fieldTime").value
-    || getNowDateTime();
-
-
-  const mode =
-    document.getElementById("fieldMode").value;
-
-
-  const saveBtn =
-    document.getElementById("saveBtn");
-
-  saveBtn.disabled = true;
-
-  saveBtn.innerText =
-    "Saving...";
-
-
-  try{
-
-    await addDoc(
-
-      collection(
-        db,
-        "users",
-        currentUser.uid,
-        "transactions"
-      ),
-
-      {
-
-        type: activeType,
-
-        category: category,
-
-        title: desc,
-
-        amount: amount,
-
-        mode: mode,
-
-        date: time,
-
-        createdAt: serverTimestamp()
-
+  };
+
+  window.pickType = function(type) {
+    activeType = type;
+    document.getElementById("tagExpense").className = (type === "expense") ? "type-btn selected-expense" : "type-btn";
+    document.getElementById("tagIncome").className = (type === "income") ? "type-btn selected-income" : "type-btn";
+    document.getElementById("formTitleText").innerText = (type === "expense") ? "🔻 Add Expense" : "🔺 Add Income";
+    updateCategoryDropdown(type);
+  };
+
+  window.launchForm = function(type) {
+    pickType(type);
+    document.getElementById("fieldTime").value = getNowDateTime();
+    document.getElementById("fieldAmount").value = "";
+    document.getElementById("fieldDesc").value = "";
+    showScreen("form");
+  };
+
+  window.setCategoryFilter = function(cat) {
+    activeCatFilter = cat;
+    var pills = document.querySelectorAll(".cat-pill");
+    for(var i=0;i<pills.length;i++){
+      var p = pills[i];
+      if((cat === "ALL" && p.innerText === "All") || p.innerText.indexOf(cat) !== -1){
+        p.className = "cat-pill active";
+      } else {
+        p.className = "cat-pill";
       }
+    }
+    render();
+  };
 
-    );
+  window.deleteRecord = function(docId) {
+    if(db) {
+      db.collection("expenses").doc(String(docId)).delete().catch(function(err){});
+    }
+  };
 
+  window.submitEntry = function() {
+    var amtInput = document.getElementById("fieldAmount");
+    if(!amtInput) return;
+    var amt = parseFloat(amtInput.value);
 
-    currentYear =
-      parseInt(time.substring(0,4));
+    if(!amtInput.value || isNaN(amt) || amt <= 0){
+      amtInput.focus();
+      return;
+    }
 
-    currentMonth =
-      parseInt(time.substring(5,7)) - 1;
+    var cat = document.getElementById("fieldCategory").value || "Other";
+    var desc = document.getElementById("fieldDesc").value.trim() || cat;
+    var timeVal = document.getElementById("fieldTime").value || getNowDateTime();
+    var mode = document.getElementById("fieldMode").value;
 
+    var newRecord = {
+      type: activeType,
+      category: cat,
+      title: desc,
+      amount: amt,
+      mode: mode,
+      date: timeVal,
+      createdAt: Date.now()
+    };
 
-    document.getElementById(
-      "fieldAmount"
-    ).value = "";
+    if(db) {
+      db.collection("expenses").add(newRecord).catch(function(err){
+        console.error("Error adding transaction:", err);
+      });
+    }
 
-    document.getElementById(
-      "fieldDesc"
-    ).value = "";
-
+    if(timeVal.length >= 7){
+      currentYear = parseInt(timeVal.substring(0,4),10);
+      currentMonth = parseInt(timeVal.substring(5,7),10)-1;
+    }
 
     setCategoryFilter("ALL");
-
     showScreen("home");
+  };
 
+  function render() {
+    var monthStr = monthNames[currentMonth] + " " + currentYear;
+    document.getElementById("monthBadge").innerText = monthStr;
+    document.getElementById("repMonthLabel").innerText = monthStr;
 
-  }catch(error){
+    var incomeSum = 0, expenseSum = 0;
+    var cashIn = 0, cashOut = 0, onlineIn = 0, onlineOut = 0;
+    var tallyMap = {};
 
-    console.error(error);
+    var targetPrefix = currentYear + "-" + padZero(currentMonth + 1);
 
-    alert(
-      "Transaction save nahi hua.\n\n" +
-      error.message
-    );
+    var monthRecords = [];
+    for(var i=0;i<records.length;i++){
+      var item = records[i];
+      if(item.date && item.date.indexOf(targetPrefix) === 0){
+        monthRecords.push(item);
+        var a = Number(item.amount) || 0;
+        var isCash = (item.mode === "Cash");
 
-  }
-
-
-  saveBtn.disabled = false;
-
-  saveBtn.innerText =
-    "Save Transaction";
-
-};
-
-
-
-/* =========================================
-   RENDER
-========================================= */
-
-function render(){
-
-  const monthStr =
-    monthNames[currentMonth] +
-    " " +
-    currentYear;
-
-
-  document.getElementById("monthBadge").innerText =
-    monthStr;
-
-  document.getElementById("repMonthLabel").innerText =
-    monthStr;
-
-
-  let incomeSum = 0;
-
-  let expenseSum = 0;
-
-
-  let cashIn = 0;
-
-  let cashOut = 0;
-
-  let onlineIn = 0;
-
-  let onlineOut = 0;
-
-
-  const tallyMap = {};
-
-
-  const targetPrefix =
-    currentYear +
-    "-" +
-    padZero(currentMonth + 1);
-
-
-  const monthRecords =
-    records.filter((item) => {
-
-      return (
-        item.date &&
-        item.date.indexOf(targetPrefix) === 0
-      );
-
-    });
-
-
-  monthRecords.forEach((item) => {
-
-    const amount =
-      Number(item.amount) || 0;
-
-    const isCash =
-      item.mode === "Cash";
-
-
-    if(item.type === "expense"){
-
-      expenseSum += amount;
-
-      if(isCash){
-
-        cashOut += amount;
-
-      }else{
-
-        onlineOut += amount;
-
+        if(item.type === "expense"){
+          expenseSum += a;
+          if(isCash) cashOut += a; else onlineOut += a;
+          var catName = item.category || "Other";
+          if(!tallyMap[catName]) tallyMap[catName] = {cash:0, online:0, total:0};
+          if(isCash) tallyMap[catName].cash += a; else tallyMap[catName].online += a;
+          tallyMap[catName].total += a;
+        } else {
+          incomeSum += a;
+          if(isCash) cashIn += a; else onlineIn += a;
+        }
       }
-
-
-      const cat =
-        item.category || "Other";
-
-
-      if(!tallyMap[cat]){
-
-        tallyMap[cat] = {
-
-          cash:0,
-
-          online:0,
-
-          total:0
-
-        };
-
-      }
-
-
-      if(isCash){
-
-        tallyMap[cat].cash += amount;
-
-      }else{
-
-        tallyMap[cat].online += amount;
-
-      }
-
-
-      tallyMap[cat].total += amount;
-
-
-    }else{
-
-      incomeSum += amount;
-
-
-      if(isCash){
-
-        cashIn += amount;
-
-      }else{
-
-        onlineIn += amount;
-
-      }
-
     }
 
-  });
-
-
-
-  const displayRecords =
-    monthRecords
-      .filter((tx) => {
-
-        return (
-
-          activeCatFilter === "ALL" ||
-
-          String(tx.category || "Other")
-            .toLowerCase() ===
-          activeCatFilter.toLowerCase()
-
-        );
-
-      })
-      .sort((a,b) =>
-        String(b.date).localeCompare(
-          String(a.date)
-        )
-      );
-
-
-
-  const container =
-    document.getElementById("txList");
-
-
-  container.innerHTML = "";
-
-
-  if(displayRecords.length === 0){
-
-    container.innerHTML =
-      '<div class="empty-state">' +
-      "No entries found for " +
-      escapeHTML(monthStr) +
-      "." +
-      "</div>";
-
-  }else{
-
-
-    displayRecords.forEach((item) => {
-
-      const isExpense =
-        item.type === "expense";
-
-
-      const amount =
-        Number(item.amount) || 0;
-
-
-      const category =
-        item.category || "Other";
-
-
-      const icon =
-        getCatIcon(
-          category,
-          item.type
-        );
-
-
-      const day =
-        item.date.substring(8,10);
-
-
-      const time =
-        item.date.length >= 16
-          ? item.date.substring(11,16)
-          : "";
-
-
-      const dateText =
-        day +
-        " " +
-        monthNames[currentMonth] +
-        (time ? ", " + time : "");
-
-
-      const card =
-        document.createElement("div");
-
-
-      card.className =
-        "tx-card";
-
-
-      card.innerHTML =
-
-        '<div class="tx-info">' +
-
-          '<div class="tx-icon ' +
-          item.type +
-          '">' +
-
-          icon +
-
-          "</div>" +
-
-          "<div>" +
-
-            '<div class="tx-title">' +
-
-            escapeHTML(
-              item.title || category
-            ) +
-
-            "</div>" +
-
-            '<div class="tx-date">' +
-
-            escapeHTML(category) +
-
-            " • " +
-
-            escapeHTML(dateText) +
-
-            " • " +
-
-            escapeHTML(item.mode) +
-
-            "</div>" +
-
-          "</div>" +
-
-        "</div>" +
-
-
-        '<div style="display:flex;align-items:center">' +
-
-          '<div class="tx-amount ' +
-          (isExpense
-            ? "val-expense"
-            : "val-income") +
-          '">' +
-
-          (isExpense ? "-" : "+") +
-
-          " ₹ " +
-
-          amount.toLocaleString("en-IN") +
-
-          "</div>" +
-
-
-          '<button class="btn-del" ' +
-          'onclick="deleteRecord(\'' +
-          item.id +
-          '\')">' +
-
-          "🗑️" +
-
-          "</button>" +
-
-        "</div>";
-
-
-      container.appendChild(card);
-
-    });
-
+    var displayRecords = [];
+    for(var j=0;j<monthRecords.length;j++){
+      var tx = monthRecords[j];
+      if(activeCatFilter === "ALL" || (tx.category || "Other").toLowerCase() === activeCatFilter.toLowerCase()){
+        displayRecords.push(tx);
+      }
+    }
+
+    displayRecords.sort(function(a,b){ return (b.date||"").localeCompare(a.date||""); });
+
+    var container = document.getElementById("txList");
+    if(!container) return;
+    container.innerHTML = "";
+
+    if(displayRecords.length === 0){
+      container.innerHTML = '<div class="empty-state">No entries found for ' + monthStr + '.</div>';
+    } else {
+      for(var k=0;k<displayRecords.length;k++){
+        var rowItem = displayRecords[k];
+        var isExp = (rowItem.type === "expense");
+        var amt = Number(rowItem.amount) || 0;
+        var cat = rowItem.category || "Other";
+        var icon = getCatIcon(cat, rowItem.type);
+
+        var dayPart = rowItem.date.substring(8, 10);
+        var timePart = rowItem.date.length >= 16 ? rowItem.date.substring(11, 16) : "";
+        var dateStr = dayPart + " " + monthNames[currentMonth] + (timePart ? ", " + timePart : "");
+
+        var card = document.createElement("div");
+        card.className = "tx-card";
+        card.innerHTML = 
+          '<div class="tx-info">' +
+            '<div class="tx-icon ' + rowItem.type + '">' + icon + '</div>' +
+            '<div>' +
+              '<div class="tx-title">' + rowItem.title + '</div>' +
+              '<div class="tx-date">' + cat + " • " + dateStr + " • " + rowItem.mode + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;">' +
+            '<div class="tx-amount ' + (isExp ? 'val-expense' : 'val-income') + '">' + (isExp ? "-" : "+") + " ₹ " + amt.toLocaleString("en-IN") + '</div>' +
+            '<button type="button" class="btn-del" onclick="deleteRecord(\'' + rowItem.id + '\')">🗑️</button>' +
+          '</div>';
+        container.appendChild(card);
+      }
+    }
+
+    var net = incomeSum - expenseSum;
+    document.getElementById("valIncome").innerText = "+ ₹ " + incomeSum.toLocaleString("en-IN");
+    document.getElementById("valExpense").innerText = "- ₹ " + expenseSum.toLocaleString("en-IN");
+    document.getElementById("valNet").innerText = "₹ " + net.toLocaleString("en-IN");
+    document.getElementById("txCountBadge").innerText = displayRecords.length + " entries";
+
+    document.getElementById("repTotalIncome").innerText = "₹ " + incomeSum.toLocaleString("en-IN");
+    document.getElementById("repTotalExpense").innerText = "₹ " + expenseSum.toLocaleString("en-IN");
+    document.getElementById("repTotalCount").innerText = monthRecords.length;
+
+    var rate = incomeSum > 0 ? Math.max(0, Math.round((net / incomeSum) * 100)) : 0;
+    document.getElementById("repSavingsRate").innerText = rate + "%";
+
+    document.getElementById("repCashBalance").innerText = "₹ " + (cashIn - cashOut).toLocaleString("en-IN");
+    document.getElementById("repCashIn").innerText = "+₹" + cashIn.toLocaleString("en-IN");
+    document.getElementById("repCashOut").innerText = "-₹" + cashOut.toLocaleString("en-IN");
+    document.getElementById("repOnlineBalance").innerText = "₹ " + (onlineIn - onlineOut).toLocaleString("en-IN");
+    document.getElementById("repOnlineIn").innerText = "+₹" + onlineIn.toLocaleString("en-IN");
+    document.getElementById("repOnlineOut").innerText = "-₹" + onlineOut.toLocaleString("en-IN");
+
+    var tbody = document.getElementById("tallyBody");
+    if(!tbody) return;
+    tbody.innerHTML = "";
+    var tKeys = Object.keys(tallyMap);
+    if(tKeys.length === 0){
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:10px;">No expenses recorded</td></tr>';
+    } else {
+      for(var t=0;t<tKeys.length;t++){
+        var cName = tKeys[t];
+        var r = tallyMap[cName];
+        var tr = document.createElement("tr");
+        tr.innerHTML = '<td><strong>' + getCatIcon(cName, 'expense') + ' ' + cName + '</strong></td>' +
+                       '<td class="tar">₹ ' + r.cash.toLocaleString('en-IN') + '</td>' +
+                       '<td class="tar">₹ ' + r.online.toLocaleString('en-IN') + '</td>' +
+                       '<td class="tar"><strong class="val-expense">₹ ' + r.total.toLocaleString('en-IN') + '</strong></td>';
+        tbody.appendChild(tr);
+      }
+    }
   }
 
-
-
-  /* BALANCE */
-
-  const net =
-    incomeSum - expenseSum;
-
-
-  document.getElementById("valIncome").innerText =
-    "+ ₹ " +
-    incomeSum.toLocaleString("en-IN");
-
-
-  document.getElementById("valExpense").innerText =
-    "- ₹ " +
-    expenseSum.toLocaleString("en-IN");
-
-
-  document.getElementById("valNet").innerText =
-    "₹ " +
-    net.toLocaleString("en-IN");
-
-
-  document.getElementById("txCountBadge").innerText =
-    displayRecords.length +
-    " entries";
-
-
-
-  /* REPORT SUMMARY */
-
-  document.getElementById("repTotalIncome").innerText =
-    "₹ " +
-    incomeSum.toLocaleString("en-IN");
-
-
-  document.getElementById("repTotalExpense").innerText =
-    "₹ " +
-    expenseSum.toLocaleString("en-IN");
-
-
-  document.getElementById("repTotalCount").innerText =
-    monthRecords.length;
-
-
-  const rate =
-    incomeSum > 0
-      ? Math.round(
-          (net / incomeSum) * 100
-        )
-      : 0;
-
-
-  document.getElementById("repSavingsRate").innerText =
-    rate + "%";
-
-
-
-  /* CASH */
-
-  const cashNet =
-    cashIn - cashOut;
-
-
-  document.getElementById("repCashBalance").innerText =
-    "₹ " +
-    cashNet.toLocaleString("en-IN");
-
-
-  document.getElementById("repCashIn").innerText =
-    "+₹" +
-    cashIn.toLocaleString("en-IN");
-
-
-  document.getElementById("repCashOut").innerText =
-    "-₹" +
-    cashOut.toLocaleString("en-IN");
-
-
-
-  /* ONLINE */
-
-  const onlineNet =
-    onlineIn - onlineOut;
-
-
-  document.getElementById("repOnlineBalance").innerText =
-    "₹ " +
-    onlineNet.toLocaleString("en-IN");
-
-
-  document.getElementById("repOnlineIn").innerText =
-    "+₹" +
-    onlineIn.toLocaleString("en-IN");
-
-
-  document.getElementById("repOnlineOut").innerText =
-    "-₹" +
-    onlineOut.toLocaleString("en-IN");
-
-
-
-  /* CATEGORY TALLY */
-
-  const tbody =
-    document.getElementById("tallyBody");
-
-
-  tbody.innerHTML = "";
-
-
-  const keys =
-    Object.keys(tallyMap);
-
-
-  if(keys.length === 0){
-
-    tbody.innerHTML =
-      '<tr>' +
-      '<td colspan="4" style="text-align:center;color:#94a3b8;padding:10px">' +
-      "No expenses recorded" +
-      "</td>" +
-      "</tr>";
-
-  }else{
-
-
-    keys.forEach((category) => {
-
-      const row =
-        tallyMap[category];
-
-
-      const tr =
-        document.createElement("tr");
-
-
-      tr.innerHTML =
-
-        "<td><strong>" +
-
-        getCatIcon(
-          category,
-          "expense"
-        ) +
-
-        " " +
-
-        escapeHTML(category) +
-
-        "</strong></td>" +
-
-
-        '<td class="tar">₹ ' +
-
-        row.cash.toLocaleString("en-IN") +
-
-        "</td>" +
-
-
-        '<td class="tar">₹ ' +
-
-        row.online.toLocaleString("en-IN") +
-
-        "</td>" +
-
-
-        '<td class="tar"><strong class="val-expense">₹ ' +
-
-        row.total.toLocaleString("en-IN") +
-
-        "</strong></td>";
-
-
-      tbody.appendChild(tr);
-
-    });
-
-  }
-
-}
-
-
-
-/* =========================================
-   INITIALIZE
-========================================= */
-
-updateCategoryDropdown("expense");
-
-render();
-
+  updateCategoryDropdown("expense");
+  showScreen("home");
 </script>
-
 </body>
 </html>
