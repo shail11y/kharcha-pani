@@ -314,13 +314,36 @@
     var currentMonth = now.getMonth();
     var activeType = 'expense';
     var activeCatFilter = 'ALL';
+    var records = [];
 
     var mStr = padZero(currentMonth + 1);
-    var records = [
-      { id: 101, type: 'expense', category: 'Grocery', title: 'Groceries Store', amount: 850, mode: 'Online', date: currentYear + '-' + mStr + '-18T16:30' },
-      { id: 102, type: 'income', category: 'Salary', title: 'Monthly Salary', amount: 35000, mode: 'Online', date: currentYear + '-' + mStr + '-18T11:00' },
-      { id: 103, type: 'expense', category: 'Fuel', title: 'Petrol', amount: 350, mode: 'Cash', date: currentYear + '-' + mStr + '-17T18:15' }
-    ];
+
+    // Safe LocalStorage Loading
+    function loadLocalData() {
+      try {
+        var saved = localStorage.getItem('kharcha_local_records_v3');
+        if (saved) { 
+          records = JSON.parse(saved); 
+        } else {
+          records = [
+            { id: 101, type: 'expense', category: 'Grocery', title: 'Groceries Store', amount: 850, mode: 'Online', date: currentYear + '-' + mStr + '-18T16:30' },
+            { id: 102, type: 'income', category: 'Salary', title: 'Monthly Salary', amount: 35000, mode: 'Online', date: currentYear + '-' + mStr + '-18T11:00' },
+            { id: 103, type: 'expense', category: 'Fuel', title: 'Petrol', amount: 350, mode: 'Cash', date: currentYear + '-' + mStr + '-17T18:15' }
+          ];
+          saveLocalData();
+        }
+      } catch(e) {
+        records = [];
+      }
+    }
+
+    function saveLocalData() {
+      try {
+        localStorage.setItem('kharcha_local_records_v3', JSON.stringify(records));
+      } catch(e) {}
+    }
+
+    loadLocalData();
 
     window.showScreen = function(viewName) {
       document.getElementById('viewHome').style.display = (viewName === 'home') ? 'block' : 'none';
@@ -385,6 +408,7 @@
 
     window.deleteRecord = function(id) {
       records = records.filter(function(x) { return x.id !== id; });
+      saveLocalData();
       render();
     };
 
@@ -412,6 +436,8 @@
         date: timeVal
       });
 
+      saveLocalData();
+
       if (timeVal.length >= 7) {
         currentYear = parseInt(timeVal.substring(0, 4), 10);
         currentMonth = parseInt(timeVal.substring(5, 7), 10) - 1;
@@ -423,21 +449,4 @@
 
     function render() {
       var monthStr = monthNames[currentMonth] + ' ' + currentYear;
-      document.getElementById('monthBadge').innerText = monthStr;
-      document.getElementById('repMonthLabel').innerText = monthStr;
-
-      var incomeSum = 0;
-      var expenseSum = 0;
-      var cashIn = 0, cashOut = 0;
-      var onlineIn = 0, onlineOut = 0;
-      var tallyMap = {};
-
-      var targetPrefix = currentYear + '-' + padZero(currentMonth + 1);
-
-      var monthRecords = [];
-      for (var i = 0; i < records.length; i++) {
-        var item = records[i];
-        if (item.date && item.date.indexOf(targetPrefix) === 0) {
-          monthRecords.push(item);
-          var a = Number(item.amount) || 0;
-          v
+      document.getElementById('monthB
